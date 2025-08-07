@@ -101,10 +101,6 @@ jobs:
             echo "File missing"; exit 1
           fi
 
-      - name: Copy remote-metrics.log file to AiPerfTestAnalysis/inputs
-        run: |
-          cp ./distributed-performance-testing/src/remote-metrics.log ./AiPerfTestAnalysis/src/inputs/
-
       - name: Log & Statistics Artifacts
         uses: actions/upload-artifact@v4
         with:
