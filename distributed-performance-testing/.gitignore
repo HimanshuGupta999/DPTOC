@@ -1,0 +1,5 @@
+node_modules
+*.jtl
+*.log
+.env
+test-files/html_report_*

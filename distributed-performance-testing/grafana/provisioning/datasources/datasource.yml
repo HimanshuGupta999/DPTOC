@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    isDefault: false
+    jsonData:
+      version: Flux
+      organization: jmeter-org-Influx
+      defaultBucket: jmeter_bucket
+    secureJsonData:
+      token: 9_byYbUYL7HSXQKkyEuWrdal6q68uyW_Oub2NcS9ej3RTyZsX1ca_7V9C8rYJoq32j8pSNQAszp747UhLdrkTg==
+    url: http://influxdb:8086
