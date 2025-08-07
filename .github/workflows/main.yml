@@ -1,0 +1,112 @@
+name: Distributed Load Test Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:  # Enables trigger
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+
+    env:
+      JMETER_VERSION: ${{ secrets.JMETER_VERSION }}
+      MASTER_IP: ${{ secrets.MASTER_IP }}
+      SLAVE_IPS: ${{ secrets.SLAVE_IPS }}
+      JMETER_DIR: ${{ secrets.JMETER_DIR }}
+      SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+      SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      TEST_PLAN_PATH: ${{ secrets.TEST_PLAN_PATH }}
+      SSH_PORT_MASTER: ${{ secrets.SSH_PORT_MASTER }}
+      SSH_PORT_SLAVE1: ${{ secrets.SSH_PORT_SLAVE1 }}
+      SSH_PORT_SLAVE2: ${{ secrets.SSH_PORT_SLAVE2 }}
+      RESULT_PATH: ${{ secrets.RESULT_PATH }}
+      NUMBER_OF_THREADS: ${{ secrets.NUMBER_OF_THREADS }}
+      APPLICATION_NAME: ${{ secrets.APPLICATION_NAME }}
+      GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+      GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+      INFLUXDB_ADMIN_USER: ${{ secrets.INFLUXDB_ADMIN_USER }}
+      INFLUXDB_ADMIN_PASSWORD: ${{ secrets.INFLUXDB_ADMIN_PASSWORD }}
+      INFLUXDB_BUCKET: ${{ secrets.INFLUXDB_BUCKET }}
+      INFLUXDB_ORG: ${{ secrets.INFLUXDB_ORG }}
+      INFLUXDB_TOKEN: ${{ secrets.INFLUXDB_TOKEN }}
+      INFLUXDB_URL: ${{ secrets.INFLUXDB_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Navigate to distributed-performance-testing
+        working-directory: ./distributed-performance-testing
+        run: echo "Entered project directory"
+    
+      - name: Create .env file inside distributed-performance-testing
+        working-directory: ./distributed-performance-testing
+        run: |
+          cat <<EOF > .env
+          JMETER_VERSION=${JMETER_VERSION}
+          MASTER_IP=${MASTER_IP}
+          SLAVE_IPS=${SLAVE_IPS}
+          JMETER_DIR=${JMETER_DIR}
+          SSH_USERNAME=${SSH_USERNAME}
+          SSH_PASSWORD=${SSH_PASSWORD}
+          TEST_PLAN_PATH=${TEST_PLAN_PATH}
+          RESULT_PATH=${RESULT_PATH}
+          NUMBER_OF_THREADS=${NUMBER_OF_THREADS}
+          SSH_PORT_MASTER=${SSH_PORT_MASTER}
+          SSH_PORT_SLAVE1=${SSH_PORT_SLAVE1}
+          SSH_PORT_SLAVE2=${SSH_PORT_SLAVE2}
+          INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USER}
+          INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+          INFLUXDB_URL=${INFLUXDB_URL}
+          INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+          INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+          INFLUXDB_ORG=${INFLUXDB_ORG}
+          APPLICATION_NAME=${APPLICATION_NAME}
+          GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER}
+          GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+          EOF
+          
+      - name: Install npm dependencies
+        working-directory: ./distributed-performance-testing
+        run: npm install
+
+      - name: Check Docker installation
+        run: |
+          docker --version
+          docker compose version || docker-compose version
+          
+      - name: Build and start Docker containers
+        working-directory: ./distributed-performance-testing
+        run: docker compose up --build -d
+
+      - name: Run node index.js
+        working-directory: ./distributed-performance-testing/src
+        run: node index.js  
+
+      - name: Check if remote-metrics.log exists
+        working-directory: ./distributed-performance-testing/src
+        run: |
+          ls
+          if [ -f remote-metrics.log ]; then
+            echo "File exists"
+          else
+            echo "File missing"; exit 1
+          fi
+
+      - name: Copy remote-metrics.log file to AiPerfTestAnalysis/inputs
+        run: |
+          cp ./distributed-performance-testing/src/remote-metrics.log ./AiPerfTestAnalysis/src/inputs/
+
+      - name: Log & Statistics Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: distributed-test-results
+          path: ./distributed-performance-testing/test-files/
