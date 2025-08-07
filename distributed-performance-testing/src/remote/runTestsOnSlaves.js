@@ -10,10 +10,12 @@ const htmlReportDir = `${config.resultPath}/html_report_${timestamp}`;
 function runTestsOnSlaves(ip, callback) {
     const threadPerSlave = calculateSlaveThreads();
     logger.info("threadPerSlave : ", threadPerSlave)
-    const command = `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} 
-    -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`;
-    console.log("COMMAND : ", `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} 
-        -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`);
+    // const command = `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} 
+    // -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`;
+    // console.log("COMMAND : ", `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} 
+    //     -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`);
+    const command = `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} -JinfluxdbUrl=${config.influxDbUrl} -JinfluxdbToken=${config.influxDbToken} -JinfluxdbOrg=${config.influxDbOrg} -JinfluxdbBucket=${config.influxDbBucket} -Japplication=${config.applicationName} -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`;
+    console.log("COMMAND : ", `${config.jmeterDir}/bin/jmeter -n -r -t ${config.testPlanPath} -l ${jtlFile} -GtotalThreads=${threadPerSlave} -JinfluxdbUrl=${config.influxDbUrl} -JinfluxdbToken=${config.influxDbToken} -JinfluxdbOrg=${config.influxDbOrg} -JinfluxdbBucket=${config.influxDbBucket} -Japplication=${config.applicationName} -Jip=${config.masterIp} -Jlog_level.jmeter=DEBUG`);
     executeCommand(ip, command, callback);
 }
 
